@@ -1,20 +1,20 @@
 # QuantumBlockChian
-[![English](https://img.shields.io/badge/Language-English-brightgreen)](https://github.com/QuantumCipherMaster/QuantumBlockChain/QuantumBlockChain_EN/README_EN.md)
-[![Русский](https://img.shields.io/badge/Язык-Русский-blue)](https://github.com/QuantumCipherMaster/QuantumBlockChain/QuantumBlockChain_RU/README_RU.md)
-[![Українська](https://img.shields.io/badge/Мова-Українська-yellow)](https://github.com/QuantumCipherMaster/QuantumBlockChain/QuantumBlockChain_UK/README_UK.md)
+
 ## Table of Contents
+
 - [QuantumBlockChian](#quantumblockchian)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Run on your device](#run-on-your-device)
     - [For Linux / MacOS](#for-linux--macos)
     - [For Windows PowerShell](#for-windows-powershell)
-  - [Design of Classes](#design-of-classes)
+  - [Classes](#classes)
     - [Block](#block)
     - [Chain](#chain)
     - [Transaction](#transaction)
     - [MiningTimer](#miningtimer)
   - [Usage](#usage)
+  - [Dependencies](#dependencies)
   - [Logging](#logging)
   - [Testing](#testing)
 - [Conclusion](#conclusion)
@@ -42,9 +42,10 @@ git clone https://github.com/QuantumCipherMaster/QuantumBlockChain
 cd QuantumBlockChain\QuantumBlockChain_EN
 npm install
 npm start
+
 ```
 
-## Design of Classes
+## Classes
 
 ### Block
 
@@ -158,6 +159,21 @@ Handles timing and logging of the mining process.
    ```
 
 ---
+
+## Dependencies
+
+- **elliptic:** Used for elliptic curve cryptography.
+  ```bash
+  npm install elliptic
+  ```
+- **crypto-js:** Used for SHA-256 hashing.
+  ```bash
+  npm install crypto-js
+  ```
+- **fs (File System):** Built-in Node.js module for file operations.
+
+---
+
 ## Logging
 
 The `MiningTimer` class logs mining details to a CSV file located at `./mining_logs.csv`. Each entry includes:
