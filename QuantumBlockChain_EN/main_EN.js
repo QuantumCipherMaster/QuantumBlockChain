@@ -2,8 +2,7 @@
 const EC = require("elliptic").ec;
 
 // Initialize an object for secp256k1 elliptic curve operations
-const ec =
- new EC("secp256k1");
+const ec = new EC("secp256k1");
 
 // Import library for sha256 function
 const sha256 = require("crypto-js/sha256");
@@ -19,7 +18,7 @@ const colors = {
   yellow: "\x1b[33m",
   blue: "\x1b[34m",
   cyan: "\x1b[36m",
-  red: "\x1b[31m"
+  red: "\x1b[31m",
 };
 
 // Class representing a block in the chain
@@ -78,7 +77,7 @@ class Block {
           this.nonce
         }, partial hash: ${this.hash.substring(0, 16)}...`
       );
-      
+
       spinnerIndex = (spinnerIndex + 1) % spinnerChars.length;
       if (this.hash.substring(0, difficulty) !== this.getAnswer(difficulty)) {
         this.nonce++;
@@ -112,9 +111,71 @@ class Chain {
     return this.chain[this.chain.length - 1];
   }
 
-  // Adds a transaction to the transaction pool
+  // Calculates the balance of a given address
+  getBalanceOfAddress(address) {
+    let balance = 0; // Start with a balance of 0
+
+    // Iterate over each block in the chain
+    for (const block of this.chain) {
+      // Iterate over each transaction in the current block
+      for (const trans of block.transactions) {
+        // If the address is the sender, decrease the balance
+        if (trans.fromAddress === address) {
+          balance -= trans.amount;
+        }
+
+        // If the address is the receiver, increase the balance
+        if (trans.toAddress === address) {
+          balance += trans.amount;
+        }
+      }
+    }
+    return balance; // Return the calculated balance
+  }
+
+  // Adds a transaction to the transaction pool after validation
   addTransaction(transaction) {
+    // Basic validation: check if addresses and amount are valid
+    if (
+      !transaction.fromAddress ||
+      !transaction.toAddress ||
+      transaction.amount <= 0
+    ) {
+      throw new Error(
+        "Transaction must include from/to address and a positive amount."
+      );
+    }
+
+    // Validate the transaction signature
+    if (!transaction.isValid()) {
+      throw new Error(
+        "Cannot add invalid transaction (signature check failed) to pool."
+      );
+    }
+
+    // Check sender's balance (skip for reward transactions where fromAddress is empty)
+    if (transaction.fromAddress !== "") {
+      const balance = this.getBalanceOfAddress(transaction.fromAddress);
+      if (balance < transaction.amount) {
+        throw new Error(
+          `Insufficient balance. Sender has ${balance}, needs ${transaction.amount}.`
+        );
+      }
+    }
+
+    // Check if the transaction already exists in the pool (based on signature)
+    const existingTransaction = this.transactionPool.find(
+      (tx) => tx.signature === transaction.signature
+    );
+    if (existingTransaction) {
+      throw new Error("Transaction already exists in the pool.");
+    }
+
+    // If all checks pass, add to the pool
     this.transactionPool.push(transaction);
+    console.log(
+      `${colors.cyan}Transaction added to pool successfully.${colors.reset}`
+    );
   }
 
   // Creates and adds a new block to the chain
@@ -132,7 +193,11 @@ class Chain {
   // Mines all transactions in the pool and creates a block
   mineTransactionPool(minerAddress) {
     const timer = new MiningTimer();
-    const rewardTransaction = new Transaction("", minerAddress, this.minerReward);
+    const rewardTransaction = new Transaction(
+      "",
+      minerAddress,
+      this.minerReward
+    );
     this.transactionPool.push(rewardTransaction);
 
     timer.start();
@@ -226,12 +291,12 @@ class Transaction {
   }
 }
 
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require("node:fs");
+const path = require("node:path");
 
 class MiningTimer {
   constructor() {
-    this.csvPath = path.join(__dirname, 'mining_logs.csv'); 
+    this.csvPath = path.join(__dirname, "mining_logs.csv");
     this.startTime = null;
     this.endTime = null;
     this.spentTime = null;
@@ -252,14 +317,15 @@ class MiningTimer {
   // Logs mining data to a CSV file
   logToCSV(blockCount, minedHash) {
     const directory = path.dirname(this.csvPath);
-    
+
     // Create the directory if it doesn't exist
     if (!fs.existsSync(directory)) {
       fs.mkdirSync(directory, { recursive: true });
     }
 
     const fileExists = fs.existsSync(this.csvPath);
-    const headers = "Start Time (ISO),End Time (ISO),Spent Time (seconds),Block Count,Mined Hash\n";
+    const headers =
+      "Start Time (ISO),End Time (ISO),Spent Time (seconds),Block Count,Mined Hash\n";
 
     if (fileExists) {
       const data = fs.readFileSync(this.csvPath, "utf-8");
@@ -281,7 +347,6 @@ class MiningTimer {
   }
 }
 
-
 // Initialize a new chain instance
 const chain = new Chain();
 
@@ -294,8 +359,19 @@ const keyPairReceiver = ec.genKeyPair();
 const privateKeyReceiver = keyPairReceiver.getPrivate("hex");
 const publicKeyReceiver = keyPairReceiver.getPublic("hex");
 
+// ---- Initial Mining to Fund Sender Wallet ----
+console.log(
+  `\n${colors.yellow}Mining initial block to fund sender wallet...${colors.reset}`
+);
+// Mine the first block and reward the sender
+chain.mineTransactionPool(publicKeySender);
+console.log(
+  `${colors.green}Sender wallet funded. Current balance: ${chain.getBalanceOfAddress(publicKeySender)}${colors.reset}\n`
+);
+// ---- End Initial Mining ----
+
 // Create a new transaction, sign it, and display validation result
-const t1 = new Transaction(publicKeySender, publicKeyReceiver, 100);
+const t1 = new Transaction(publicKeySender, publicKeyReceiver, 1);
 t1.sign(keyPairSender);
 
 console.log(`${colors.green}Transaction details:${colors.reset}`, t1);
@@ -315,9 +391,10 @@ console.log(
 );
 
 // Initialize and work with the database through the manager
-const dbManager = new DatabaseManager("QuantumBlockChain_EN/mydatabase.db");
+const dbManager = new DatabaseManager(path.join(__dirname, "mydatabase.db"));
 
-dbManager.initialize()
+dbManager
+  .initialize()
   .then(() => {
     return dbManager.createRecord("Hello blockchain database");
   })
@@ -331,7 +408,6 @@ dbManager.initialize()
   })
   .then((changes) => {
     console.log("Number of rows updated:", changes);
-    // return dbManager.deleteRecord(1);
   })
   .then((changes) => {
     if (typeof changes !== "undefined") {
@@ -342,60 +418,3 @@ dbManager.initialize()
   .catch((error) => {
     console.error("Database error:", error);
   });
-
-// Test different mining difficulties
-console.log(`\n${colors.bright}=== Testing Mining Difficulties ===${colors.reset}\n`);
-
-// For various difficulties, run mining multiple times
-const testDifficulties = {
-  1: 12,
-  2: 6,
-  3: 3,
-  4: 2,
-  5: 1
-  // for Difficulties >= 6, it's hard to run on persoanl computer
-};
-
-function testMining(difficulty) {
-  try {
-    const startTime = Date.now();
-
-    const testTransaction = new Transaction(publicKeySender, publicKeyReceiver, 100);
-    testTransaction.sign(keyPairSender);
-
-    const testChain = new Chain();
-    testChain.difficulty = difficulty;
-    testChain.addTransaction(testTransaction);
-
-    // Temporarily silence console output during mining
-    const originalLog = console.log;
-    console.log = () => {};
-
-    testChain.mineTransactionPool(publicKeyReceiver);
-
-    // Restore console output
-    console.log = originalLog;
-
-    const endTime = Date.now();
-    return endTime - startTime;
-  } catch (error) {
-    console.error(`${colors.red}Error testing difficulty ${difficulty}:${colors.reset}`, error);
-    return null;
-  }
-}
-
-console.log(`${colors.cyan}Difficulty | Time (ms) | Transactions/sec${colors.reset}`);
-console.log(`${colors.cyan}-----------|-----------|-----------------${colors.reset}`);
-
-for (const [difficulty, iterations] of Object.entries(testDifficulties)) {
-  const timeElapsed = testMining(Number.parseInt(difficulty));
-
-  if (timeElapsed !== null) {
-    const transPerSec = (1000 / timeElapsed).toFixed(2);
-    console.log(
-      `${colors.yellow}${difficulty.padStart(10)}${colors.reset} | ` +
-      `${colors.green}${timeElapsed.toString().padStart(9)}${colors.reset} | ` +
-      `${colors.blue}${transPerSec.padStart(15)}${colors.reset}`
-    );
-  }
-}
