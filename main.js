@@ -36,9 +36,9 @@ class Block {
   calculateHash() {
     return sha256(
       this.timestamp +
-        this.previousHash +
-        JSON.stringify(this.transactions) +
-        this.nonce
+      this.previousHash +
+      JSON.stringify(this.transactions) +
+      this.nonce
     ).toString();
   }
 
@@ -73,8 +73,7 @@ class Block {
     while (true) {
       this.hash = this.calculateHash();
       process.stdout.write(
-        `\rMining ${spinnerChars[spinnerIndex]} nonce: ${
-          this.nonce
+        `\rMining ${spinnerChars[spinnerIndex]} nonce: ${this.nonce
         }, partial hash: ${this.hash.substring(0, 16)}...`
       );
 

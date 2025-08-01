@@ -1,9 +1,6 @@
-# QuantumBlockChian
-[![English](https://img.shields.io/badge/Language-English-brightgreen)](https://github.com/QuantumCipherMaster/QuantumBlockChain/blob/main/QuantumBlockChain_EN/README_EN.md)
-[![Русский](https://img.shields.io/badge/Язык-Русский-blue)](https://github.com/QuantumCipherMaster/QuantumBlockChain/blob/main/QuantumBlockChain_RU/README_RU.md)
-[![Українська](https://img.shields.io/badge/Мова-Українська-yellow)](https://github.com/QuantumCipherMaster/QuantumBlockChain/blob/main/QuantumBlockChain_UK/README_UK.md)
+# QuantumBlockChain
 ## Table of Contents
-- [QuantumBlockChian](#quantumblockchian)
+- [QuantumBlockChain](#QuantumBlockChain)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Run on your device](#run-on-your-device)
